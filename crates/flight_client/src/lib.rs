@@ -590,6 +590,7 @@ impl FlightClient {
             protocol_version: 0,
             payload: Bytes::default(),
         };
+
         let mut req = tonic::Request::new(stream::iter(vec![cmd]));
         let val = BASE64_STANDARD.encode(format!("{username}:{password}",));
 
@@ -674,13 +675,14 @@ fn map_tonic_error_to_message(e: tonic::Status) -> Error {
 
 pub fn is_connection_reset_error(error: &tonic::Status) -> bool {
     match error.code() {
-        tonic::Code::Internal | tonic::Code::Cancelled => {
+        tonic::Code::Internal | tonic::Code::Cancelled | tonic::Code::Unknown => {
             let error_message = error.message().to_lowercase();
             if error_message.contains("operation was canceled")
                 || error_message.contains("http2 error")
                 || error_message.contains("grpc-status header missing")
                 || error_message.contains("received message with invalid compression flag")
                 || error_message.contains("error reading a body from connection")
+                || error_message.contains("transport error")
             {
                 return true;
             }
