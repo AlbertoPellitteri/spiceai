@@ -1,0 +1,16 @@
+[package]
+name = "runtime-table-partition"
+edition.workspace = true
+exclude.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[dependencies]
+arrow-schema.workspace = true
+async-trait.workspace = true
+datafusion.workspace = true
+snafu.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "signal", "macros"] }
