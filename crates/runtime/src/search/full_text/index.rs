@@ -13,17 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 use arrow_schema::DataType;
+use async_trait::async_trait;
 use datafusion::datasource::TableProvider;
 use datafusion::error::DataFusionError;
 use datafusion::execution::runtime_env::RuntimeEnvBuilder;
 use datafusion::prelude::{SessionConfig, SessionContext};
 use logos::Source;
+use runtime_datafusion_index::Index;
 use search::generation::CandidateGeneration;
 use search::generation::post_apply::PostApplyCandidateGeneration;
 use search::generation::text_search::FullTextSearchFieldIndex;
 use snafu::{ResultExt, Snafu};
-use std::any::Any;
+use std::collections::HashSet;
 use std::sync::Arc;
 use tantivy::schema::DocParsingError;
 use tantivy::{TantivyDocument, TantivyError};
@@ -38,6 +41,21 @@ pub struct FullTextDatabaseIndex {
     pub primary_key: Vec<String>,
     base_table: Arc<dyn TableProvider>,
     index: Arc<tantivy::Index>,
+}
+
+#[async_trait]
+impl Index for FullTextDatabaseIndex {
+    fn name(&self) -> &'static str {
+        "full_text"
+    }
+
+    fn required_columns(&self) -> Vec<String> {
+        // Return both the primary key and search fields, deduplicated.
+        let mut required_columns = HashSet::new();
+        required_columns.extend(self.primary_key.iter().cloned());
+        required_columns.extend(self.search_fields.iter().cloned());
+        required_columns.into_iter().collect()
+    }
 }
 
 #[derive(Debug, Snafu)]
@@ -96,11 +114,6 @@ impl FullTextDatabaseIndex {
             index,
             primary_key: pks,
         })
-    }
-
-    #[must_use]
-    pub fn as_arc_any(self: Arc<Self>) -> Arc<dyn Any + Send + Sync> {
-        self
     }
 
     #[must_use]

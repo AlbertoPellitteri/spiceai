@@ -11191,6 +11191,7 @@ version = "1.5.0-unstable"
 dependencies = [
  "async-trait",
  "datafusion",
+ "futures",
 ]
 
 [[package]]
